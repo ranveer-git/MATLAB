@@ -74,12 +74,26 @@ dmin = 1.2;
 dmax = 2.6;
 dt1= (dmax-dmin)/(length(d1)-1);
 d1 = dmin:dt1:dmax;
-D1 = repmat (d1,length(t),1);
-S = repmat (s,length(t),1);
-for i=1:max(t);
-    for j = 1:length(d);
-        if D1(i,j)<D(1,j+1)
-        N1(i,j)=N(i,j).*S(i,j);
-        end
+%D1 = repmat (d1,length(t),1);
+%S = repmat (s,length(t),1);
+transformationMatrix = zeros(2,length(d));
+for dIndex=1:length(d)
+    dCurrent = d(dIndex);
+    for bucketIndex = 1 : length(d1);
+       currentBucket = d1(bucketIndex);
+       if(currentBucket > dCurrent)
+        break
+       end
+       if(currentBucket <= dCurrent)
+          transformationMatrix(1,dIndex) = dIndex;
+          transformationMatrix(2,dIndex) = bucketIndex;
+     end
     end
+end
+
+N1=zeros(tmax+1,length(d1));
+for i = 1:tmax+1
+for j=1:length(d)
+   N1(i,transformationMatrix(2,j))=N1(i,transformationMatrix(2,j))+N(i,transformationMatrix(1,j));
+end
 end
