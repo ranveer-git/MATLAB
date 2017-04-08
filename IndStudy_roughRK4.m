@@ -2,6 +2,8 @@ clc
 close all
 clear all
 
+f = @(t,N) (rform-rdep);
+
 beta = 7*10^-9;
 smin=1;
 smax=10;
@@ -9,7 +11,8 @@ ds=1;
 s=smin:ds:smax;
 %Diameter of each bin
 d= ((6/pi).*s).^(1/3);
-dt=1;
+
+dt=1;  % Step size
 tmax=500;
 t = 0:dt:tmax;
 N = zeros(length(t),length(s));
@@ -32,11 +35,16 @@ for i=1:(length (t)-1);
         if j<max(s)
             rdep(i,j)=beta*N(i,j)*sum(N(i,1:max(s)-j));
         end
-        N(i+1,:)=(rform(i,:)-rdep(i,:))*dt+N(i,:);
-       
+    k1 = dt*f(t(i,:),N(i,:));
+    k2 = dt*f(t(i,:)+h/2, N(i,:)+k1/2);
+    k3 = dt*f(t(i,:)+h/2, N(i,:)+k2/2);
+    k4 = dt*f(t(i,:)+h, N(i,:)+k3);
+    N(i+1,:) = N(i,:) + (k1+2*k2+2*k3+k4)/6;
+    disp([t(i+1,:) N(i+1,:)]);
+    %N(i+1,:)=(rform(i,:)-rdep(i,:))*dt+N(i,:);
         x(i+1,:)=sum(rform(i,:));
         y(i+1,:)=sum(rdep(i,:));
-        ratio(i+1,:) = x(i+1)./y(i+1,:);
+        %ratio(i+1,:) = x(i+1)./y(i+1,:);
         volume (i+1,:)=sum(s.*(N(i,:)));
         %Total number of particles at each time point
         number(i+1,:)=sum(N(i,:));
@@ -71,7 +79,6 @@ d_new = unique((floor(d./0.2)).*0.2);
 s_new = (pi/6).*(d_new.^3);
 N1=zeros(length(t),length(d_new));
 M1=zeros(length(t),length(d_new));
-
 for dIndex=1:length(d)
     dCurrent = d(dIndex);
     for bucketIndex = 1 : length(d_new);
@@ -96,25 +103,9 @@ plot (d_new,(N1((t==5),:)),...
 %normalised mass frequency
 NormNumFreq = N1./sumN1;
 NormMassFreq = M1./sumM1;
-CumuMassFreq= zeros(length(t),length(d_new));
-CumuMassFreq(1,1)= NormMassFreq(1,1);
-
-    for j = 1:length(d_new)
-        CumuMassFreq(:,j)=(sum (NormMassFreq(:,1:j)'))';
-    end
-
 figure (6)
 plot (d_new,NormMassFreq(t==5,:),...
    d_new,NormMassFreq(t==500,:))
-legend ('5 sec','500 sec')
 title('Normalised Mass Frequency')
 
-%normalised mass frequency
-figure (7)
-plot (d_new,NormNumFreq(t==5,:),...
-   d_new,NormNumFreq(t==500,:))
-legend ('5 sec','500 sec')
-title('Normalised Number Frequency')
-
 %Calculation of d50
-
